@@ -146,23 +146,52 @@ Checks the clipboard in order:
                            (when (file-exists-p trimmed) trimmed)))))
     (cond
      (ns-files
-      (let* ((resolved (mapcar #'agent-shell-macext--resolve-file-path ns-files))
-             (images (seq-filter #'image-supported-file-p resolved))
-             (others (seq-remove #'image-supported-file-p resolved)))
-        (when images
-          (agent-shell-insert
-           :text (agent-shell--get-files-context :files images)
-           :shell-buffer (agent-shell--shell-buffer)))
-        (when others
-          (agent-shell-insert
-           :text (mapconcat #'identity others "\n")
-           :shell-buffer (agent-shell--shell-buffer)))))
+      (agent-shell-macext--insert-files ns-files))
      (text-as-file
-      (agent-shell-insert
-       :text (agent-shell-macext--resolve-file-path text-as-file)
-       :shell-buffer (agent-shell--shell-buffer)))
+      (agent-shell-macext--insert-files (list text-as-file)))
      (t
       (agent-shell-yank-dwim arg)))))
+
+;;; Drag and drop
+
+(defun agent-shell-macext--insert-files (file-paths)
+  "Insert FILE-PATHS into the agent-shell buffer, same as yank."
+  (let* ((resolved (mapcar #'agent-shell-macext--resolve-file-path file-paths))
+         (images (seq-filter #'image-supported-file-p resolved))
+         (others (seq-remove #'image-supported-file-p resolved))
+         (shell-buffer (agent-shell--shell-buffer)))
+    (when resolved
+      (agent-shell-insert
+       :text (agent-shell--get-files-context :files resolved)
+       :shell-buffer shell-buffer))))
+
+(defun agent-shell-macext--dnd-handler (url _action)
+  "Handle a single drag-and-drop file URL into an agent-shell buffer."
+  (require 'dnd)
+  (when-let ((file (dnd-get-local-file-name url t)))
+    (agent-shell-macext--insert-files (list file))
+    'private))
+
+(defun agent-shell-macext--dnd-multi-handler (urls _action)
+  "Handle multiple drag-and-drop file URLs into an agent-shell buffer."
+  (require 'dnd)
+  (let ((files (delq nil (mapcar (lambda (url) (dnd-get-local-file-name url t)) urls))))
+    (when files
+      (agent-shell-macext--insert-files files)
+      'private)))
+
+(put 'agent-shell-macext--dnd-multi-handler 'dnd-multiple-handler t)
+
+(defun agent-shell-macext--setup-dnd ()
+  "Set up drag-and-drop handlers for the current agent-shell buffer."
+  (let ((handler (if (>= emacs-major-version 30)
+                     #'agent-shell-macext--dnd-multi-handler
+                   #'agent-shell-macext--dnd-handler)))
+    (setq-local dnd-protocol-alist
+                (append (list (cons "^file:///" handler)
+                              (cons "^file:/[^/]" handler)
+                              (cons "^file:[^/]" handler))
+                        dnd-protocol-alist))))
 
 ;;; Setup
 
@@ -171,7 +200,8 @@ Checks the clipboard in order:
   "Set up macOS extensions for `agent-shell'."
   (unless (eq system-type 'darwin)
     (user-error "agent-shell-macext is intended for macOS only"))
-  (define-key agent-shell-mode-map [remap yank] #'agent-shell-macext-yank))
+  (define-key agent-shell-mode-map [remap yank] #'agent-shell-macext-yank)
+  (add-hook 'agent-shell-mode-hook #'agent-shell-macext--setup-dnd))
 
 (provide 'agent-shell-macext)
 
