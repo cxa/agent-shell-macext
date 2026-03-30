@@ -3,7 +3,7 @@
 ;; Copyright (C) 2026 realazy
 
 ;; Author: realazy
-;; URL: https://github.com/realazy/agent-shell-macext
+;; URL: https://github.com/cxa/agent-shell-macext
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "29.1") (agent-shell "0.48.1"))
 
@@ -197,11 +197,12 @@ Checks the clipboard in order:
 
 ;;;###autoload
 (defun agent-shell-macext-setup ()
-  "Set up macOS extensions for `agent-shell'."
+  "Set up macOS extensions for `agent-shell'.
+Intended for use as a hook on `agent-shell-mode-hook'."
   (unless (eq system-type 'darwin)
     (user-error "agent-shell-macext is intended for macOS only"))
   (define-key agent-shell-mode-map [remap yank] #'agent-shell-macext-yank)
-  (add-hook 'agent-shell-mode-hook #'agent-shell-macext--setup-dnd))
+  (agent-shell-macext--setup-dnd))
 
 (provide 'agent-shell-macext)
 
