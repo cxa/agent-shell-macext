@@ -55,6 +55,13 @@ Controlled by `agent-shell-macext-file-copy-policy`:
 - Emacs 29.1+
 - [agent-shell](https://github.com/xenodium/agent-shell) 0.48.1+
 - macOS (NS window system)
+- [terminal-notifier](https://github.com/julienXX/terminal-notifier) (recommended, for pop-out notifications)
+
+  ```bash
+  brew install terminal-notifier
+  ```
+
+  Without it, notifications are sent via `osascript` and will only appear in the notification panel unless you set the alert style for Script Editor to **Banners** or **Alerts** in System Settings → Notifications.
 
 ## Installation
 

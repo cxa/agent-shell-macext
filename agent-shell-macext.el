@@ -225,13 +225,13 @@ Can be set buffer-locally to control behaviour per agent-shell buffer."
     (_                    "Finished")))
 
 (defun agent-shell-macext--notify (title message)
-  "Show a native macOS notification with TITLE and MESSAGE via JXA."
-  (call-process "osascript" nil 0 nil
-                "-l" "JavaScript"
-                "-e" (format "var app = Application.currentApplication(); \
-app.includeStandardAdditions = true; \
-app.displayNotification(%S, {withTitle: %S});"
-                             message title)))
+  "Show a native macOS notification with TITLE and MESSAGE."
+  (if (executable-find "terminal-notifier")
+      (call-process "terminal-notifier" nil 0 nil
+                    "-title" title "-message" message "-sender" "org.gnu.Emacs")
+    (call-process "osascript" nil 0 nil
+                  "-e" (format "display notification %S with title %S"
+                               message title))))
 
 (defun agent-shell-macext--should-notify-p (buffer)
   "Return non-nil if a notification should fire for BUFFER.
