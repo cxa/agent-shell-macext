@@ -17,6 +17,27 @@ Pressing `C-y` in an agent-shell buffer is context-aware on macOS:
 
 Dragging files from Finder (or any app) into an agent-shell buffer works identically to `C-y`.
 
+### Native notifications
+
+agent-shell-macext posts native macOS notifications for key agent events:
+
+- **Turn complete** — when the agent finishes a turn, with a human-readable reason (Finished, Cancelled, Reached max token limit, etc.).
+- **Permission required** — when the agent is waiting for your approval.
+
+Notifications are smart about when to fire:
+
+| Situation | Notifies |
+|---|---|
+| Emacs not focused (in background) | Always |
+| Emacs focused, different buffer active | Always |
+| Emacs focused, agent-shell buffer is current | Only if `agent-shell-macext-notify-current-buffer` is non-nil (default `nil`) |
+
+`agent-shell-macext-notify-current-buffer` can be set buffer-locally to control behaviour per session:
+
+```elisp
+(setq-local agent-shell-macext-notify-current-buffer t)
+```
+
 ### Smart file copy policy
 
 Files referenced from outside the project directory may not be readable by the agent due to macOS permissions. `agent-shell-macext` handles this transparently.
@@ -44,7 +65,9 @@ Controlled by `agent-shell-macext-file-copy-policy`:
   :vc (:url "https://github.com/cxa/agent-shell-macext")
   :hook (agent-shell-mode . agent-shell-macext-setup)
   :custom
-  (agent-shell-macext-file-copy-policy 'auto)) ; auto, always-copy, always-original
+  (agent-shell-macext-file-copy-policy 'auto)    ; auto, always-copy, always-original
+  (agent-shell-macext-notifications t)           ; enable native notifications
+  (agent-shell-macext-notify-current-buffer nil)) ; nil = suppress when buffer is current and Emacs is focused
 ```
 
 ### Manual
@@ -54,6 +77,8 @@ Clone this repo and add it to your load path:
 ```elisp
 (add-to-list 'load-path "/path/to/agent-shell-macext")
 (require 'agent-shell-macext)
-(setq agent-shell-macext-file-copy-policy 'auto) ; auto, always-copy, always-original
+(setq agent-shell-macext-file-copy-policy 'auto)    ; auto, always-copy, always-original
+(setq agent-shell-macext-notifications t)           ; enable native notifications
+(setq agent-shell-macext-notify-current-buffer nil) ; nil = suppress when buffer is current and Emacs is focused
 (add-hook 'agent-shell-mode-hook #'agent-shell-macext-setup)
 ```

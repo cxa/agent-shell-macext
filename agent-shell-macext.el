@@ -36,6 +36,7 @@
 (declare-function agent-shell--dot-subdir "agent-shell")
 (declare-function agent-shell-yank-dwim "agent-shell")
 (declare-function agent-shell-cwd "agent-shell-project")
+(declare-function agent-shell-subscribe-to "agent-shell")
 
 (defgroup agent-shell-macext nil
   "macOS extensions for `agent-shell'."
@@ -193,6 +194,76 @@ Checks the clipboard in order:
                               (cons "^file:[^/]" handler))
                         dnd-protocol-alist))))
 
+;;; Notifications
+
+(defcustom agent-shell-macext-notifications t
+  "When non-nil, show macOS notifications for agent events."
+  :type 'boolean
+  :group 'agent-shell-macext)
+
+(defcustom agent-shell-macext-notify-current-buffer nil
+  "When non-nil, show notifications even when this buffer is current and Emacs is focused.
+Notifications always fire when Emacs is not focused or when the buffer
+is not currently visible, regardless of this setting.
+Can be set buffer-locally to control behaviour per agent-shell buffer."
+  :type 'boolean
+  :group 'agent-shell-macext)
+
+(defun agent-shell-macext--agent-name (buffer)
+  "Return a human-readable name for the agent in BUFFER."
+  (buffer-name buffer))
+
+(defun agent-shell-macext--describe-stop (stop-reason)
+  "Return a human-readable description for STOP-REASON."
+  (pcase stop-reason
+    ("end_turn"           "Finished")
+    ("max_tokens"         "Reached max token limit")
+    ("max_turn_requests"  "Exceeded request limit")
+    ("refusal"            "Refused")
+    ("cancelled"          "Cancelled")
+    ((pred stringp)       (format "Stopped: %s" stop-reason))
+    (_                    "Finished")))
+
+(defun agent-shell-macext--notify (title message)
+  "Show a native macOS notification with TITLE and MESSAGE via JXA."
+  (call-process "osascript" nil 0 nil
+                "-l" "JavaScript"
+                "-e" (format "var app = Application.currentApplication(); \
+app.includeStandardAdditions = true; \
+app.displayNotification(%S, {withTitle: %S});"
+                             message title)))
+
+(defun agent-shell-macext--should-notify-p (buffer)
+  "Return non-nil if a notification should fire for BUFFER.
+Always fires when Emacs is not focused or BUFFER is not the current
+buffer in the selected window.  When BUFFER is current and Emacs is
+focused, defers to `agent-shell-macext-notify-current-buffer'."
+  (or (not (frame-focus-state))
+      (not (eq buffer (window-buffer (selected-window))))
+      (buffer-local-value 'agent-shell-macext-notify-current-buffer buffer)))
+
+(defun agent-shell-macext--handle-event (buffer event)
+  "Handle agent-shell EVENT for BUFFER and show macOS notifications."
+  (when (and agent-shell-macext-notifications
+             (agent-shell-macext--should-notify-p buffer))
+    (let ((data (map-elt event :data))
+          (agent (agent-shell-macext--agent-name buffer)))
+      (pcase (map-elt event :event)
+        ('permission-request
+         (agent-shell-macext--notify agent "Permission required"))
+        ('turn-complete
+         (agent-shell-macext--notify
+          agent
+          (agent-shell-macext--describe-stop (map-elt data :stop-reason))))))))
+
+(defun agent-shell-macext--setup-notifications ()
+  "Subscribe to agent-shell events and show macOS notifications."
+  (let ((buffer (current-buffer)))
+    (agent-shell-subscribe-to
+     :shell-buffer buffer
+     :on-event (lambda (event)
+                 (agent-shell-macext--handle-event buffer event)))))
+
 ;;; Setup
 
 ;;;###autoload
@@ -202,7 +273,8 @@ Intended for use as a hook on `agent-shell-mode-hook'."
   (unless (eq system-type 'darwin)
     (user-error "agent-shell-macext is intended for macOS only"))
   (define-key agent-shell-mode-map [remap yank] #'agent-shell-macext-yank)
-  (agent-shell-macext--setup-dnd))
+  (agent-shell-macext--setup-dnd)
+  (agent-shell-macext--setup-notifications))
 
 (provide 'agent-shell-macext)
 
