@@ -50,6 +50,8 @@ Controlled by `agent-shell-macext-file-copy-policy`:
 | `always-copy` | Always copy every file to `.agent-shell/.macext/`. |
 | `always-original` | Always use the original path as-is. |
 
+Regardless of the policy, files in system temporary directories (`/var/folders/`, `/tmp/`, `/private/tmp/`) are **always copied**. These paths — such as screenshots dragged from the iOS Simulator — can be deleted by macOS at any time, so keeping the original path would cause a "file does not exist" error.
+
 ## Requirements
 
 - Emacs 29.1+

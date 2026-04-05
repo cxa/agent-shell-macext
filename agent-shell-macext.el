@@ -107,19 +107,33 @@ This covers `agent-shell-permission-allow-always' and any equivalent handler."
   (eq agent-shell-permission-responder-function
       #'agent-shell-permission-allow-always))
 
+(defun agent-shell-macext--temp-path-p (file-path)
+  "Return non-nil if FILE-PATH is in a system temporary directory.
+These paths (e.g. /var/folders/…, /tmp/, /private/tmp/) may be
+deleted by the OS at any time and should always be copied."
+  (let ((real (file-truename file-path)))
+    (or (string-prefix-p "/var/folders/" real)
+        (string-prefix-p "/tmp/" real)
+        (string-prefix-p "/private/tmp/" real))))
+
 (defun agent-shell-macext--resolve-file-path (file-path)
   "Return the path to use for FILE-PATH according to `agent-shell-macext-file-copy-policy'.
+
+Paths in system temporary directories (e.g. /var/folders/, /tmp/) are
+always copied regardless of policy, since the OS may delete them at any time.
 
 In `auto' mode, also checks whether the agent has blanket permission
 (e.g. `agent-shell-permission-allow-always'), in which case copying is
 unnecessary and the original path is used directly."
-  (pcase agent-shell-macext-file-copy-policy
-    ('always-copy     (agent-shell-macext--copy-to-macext-dir file-path))
-    ('always-original file-path)
-    ('auto            (if (or (agent-shell-macext--permission-allow-all-p)
-                              (not (agent-shell-macext--outside-project-p file-path)))
-                          file-path
-                        (agent-shell-macext--copy-to-macext-dir file-path)))))
+  (if (agent-shell-macext--temp-path-p file-path)
+      (agent-shell-macext--copy-to-macext-dir file-path)
+    (pcase agent-shell-macext-file-copy-policy
+      ('always-copy     (agent-shell-macext--copy-to-macext-dir file-path))
+      ('always-original file-path)
+      ('auto            (if (or (agent-shell-macext--permission-allow-all-p)
+                                (not (agent-shell-macext--outside-project-p file-path)))
+                            file-path
+                          (agent-shell-macext--copy-to-macext-dir file-path))))))
 
 ;; Inherit yank's `delete-selection' property so
 ;; `delete-selection-mode' replaces the active region on paste.
