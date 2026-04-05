@@ -113,6 +113,7 @@ These paths (e.g. /var/folders/…, /tmp/, /private/tmp/) may be
 deleted by the OS at any time and should always be copied."
   (let ((real (file-truename file-path)))
     (or (string-prefix-p "/var/folders/" real)
+        (string-prefix-p "/private/var/folders/" real)
         (string-prefix-p "/tmp/" real)
         (string-prefix-p "/private/tmp/" real))))
 
