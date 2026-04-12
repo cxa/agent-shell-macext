@@ -30,7 +30,7 @@ Notifications are smart about when to fire:
 |---|---|
 | Emacs not focused (in background) | Always |
 | Emacs focused, different buffer active | Always |
-| Emacs focused, agent-shell buffer is current | Only if `agent-shell-macext-notify-current-buffer` is non-nil (default `nil`) |
+| Emacs focused, agent-shell buffer or its viewport buffer is current | Only if `agent-shell-macext-notify-current-buffer` is non-nil (default `nil`) |
 
 `agent-shell-macext-notify-current-buffer` can be set buffer-locally to control behaviour per session:
 
@@ -76,7 +76,7 @@ Regardless of the policy, files in system temporary directories (`/var/folders/`
   :custom
   (agent-shell-macext-file-copy-policy 'auto)    ; auto, always-copy, always-original
   (agent-shell-macext-notifications t)           ; enable native notifications
-  (agent-shell-macext-notify-current-buffer nil)) ; nil = suppress when buffer is current and Emacs is focused
+  (agent-shell-macext-notify-current-buffer nil)) ; nil = suppress when shell/viewport is current and Emacs is focused
 ```
 
 ### Manual
@@ -88,6 +88,6 @@ Clone this repo and add it to your load path:
 (require 'agent-shell-macext)
 (setq agent-shell-macext-file-copy-policy 'auto)    ; auto, always-copy, always-original
 (setq agent-shell-macext-notifications t)           ; enable native notifications
-(setq agent-shell-macext-notify-current-buffer nil) ; nil = suppress when buffer is current and Emacs is focused
+(setq agent-shell-macext-notify-current-buffer nil) ; nil = suppress when shell/viewport is current and Emacs is focused
 (add-hook 'agent-shell-mode-hook #'agent-shell-macext-setup)
 ```

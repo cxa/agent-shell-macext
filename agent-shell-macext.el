@@ -37,6 +37,7 @@
 (declare-function agent-shell-yank-dwim "agent-shell")
 (declare-function agent-shell-cwd "agent-shell-project")
 (declare-function agent-shell-subscribe-to "agent-shell")
+(declare-function agent-shell-viewport--buffer "agent-shell-viewport")
 
 (defgroup agent-shell-macext nil
   "macOS extensions for `agent-shell'."
@@ -248,13 +249,26 @@ Can be set buffer-locally to control behaviour per agent-shell buffer."
                   "-e" (format "display notification %S with title %S"
                                message title))))
 
+(defun agent-shell-macext--current-session-buffer-p (buffer current-buffer)
+  "Return non-nil if CURRENT-BUFFER is BUFFER or its viewport buffer."
+  (or (eq buffer current-buffer)
+      (and (fboundp 'agent-shell-viewport--buffer)
+           (let ((viewport-buffer
+                  (agent-shell-viewport--buffer
+                   :shell-buffer buffer
+                   :existing-only t)))
+             (eq viewport-buffer current-buffer)))))
+
 (defun agent-shell-macext--should-notify-p (buffer)
   "Return non-nil if a notification should fire for BUFFER.
-Always fires when Emacs is not focused or BUFFER is not the current
-buffer in the selected window.  When BUFFER is current and Emacs is
-focused, defers to `agent-shell-macext-notify-current-buffer'."
+Always fires when Emacs is not focused or neither BUFFER nor its
+viewport buffer is current in the selected window.  When BUFFER or its
+viewport buffer is current and Emacs is focused, defers to
+`agent-shell-macext-notify-current-buffer'."
   (or (not (frame-focus-state))
-      (not (eq buffer (window-buffer (selected-window))))
+      (not (agent-shell-macext--current-session-buffer-p
+            buffer
+            (window-buffer (selected-window))))
       (buffer-local-value 'agent-shell-macext-notify-current-buffer buffer)))
 
 (defun agent-shell-macext--handle-event (buffer event)
