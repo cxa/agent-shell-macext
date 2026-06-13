@@ -47,13 +47,17 @@
 ;;; Yank
 
 (defcustom agent-shell-macext-file-copy-policy 'auto
-  "Controls whether files are copied to .agent-shell/.macext/ before use.
+  "Controls whether files are copied to the macext data directory before use.
+
+The directory is resolved by `agent-shell--dot-subdir', so it follows
+`agent-shell-dot-subdir-function'.  By default this is
+.agent-shell/.macext/ under the current project.
 
 `auto'           Copy only files that live outside the current project
                  directory, where the agent may lack read permission.
                  Files already inside the project are used as-is.
 
-`always-copy'    Always copy every file to .agent-shell/.macext/,
+`always-copy'    Always copy every file to the macext data directory,
                  regardless of where it lives.
 
 `always-original' Never copy; always pass the original path to the agent."
@@ -86,11 +90,12 @@ if (names.isNil()) { '' } else { \
       (error nil))))
 
 (defun agent-shell-macext--macext-dir ()
-  "Return .agent-shell/.macext/ directory, creating it if needed."
+  "Return the macext data directory, creating it if needed.
+The directory follows `agent-shell-dot-subdir-function'."
   (agent-shell--dot-subdir ".macext"))
 
 (defun agent-shell-macext--copy-to-macext-dir (file-path)
-  "Copy FILE-PATH into .agent-shell/.macext/ and return the new path."
+  "Copy FILE-PATH into the macext data directory and return the new path."
   (let* ((dest-dir (agent-shell-macext--macext-dir))
          (dest (expand-file-name (file-name-nondirectory file-path) dest-dir)))
     (copy-file file-path dest t)
@@ -147,11 +152,11 @@ Checks the clipboard in order:
 
 1. NS file paths (e.g. files copied from Finder):
    - Images are inserted as inline image context.
-   - Other files are copied to .agent-shell/.macext/ and their new
+   - Other files are copied to the macext data directory and their new
      paths are inserted as text.
 
 2. Clipboard text that is an existing file path: the file is copied
-   to .agent-shell/.macext/ and the new path is inserted.
+   to the macext data directory and the new path is inserted.
 
 3. Otherwise, fall back to `agent-shell-yank-dwim' (which handles
    raw clipboard image data), then plain `yank'."

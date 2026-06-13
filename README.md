@@ -42,12 +42,14 @@ Notifications are smart about when to fire:
 
 Files referenced from outside the project directory may not be readable by the agent due to macOS permissions. `agent-shell-macext` handles this transparently.
 
+Copied files are written to the `.macext` data directory resolved by `agent-shell`'s `agent-shell-dot-subdir-function`. With the default `agent-shell` settings, this is `.agent-shell/.macext/` under the current project. If you customize `agent-shell-dot-subdir-function`, `agent-shell-macext` follows the same location.
+
 Controlled by `agent-shell-macext-file-copy-policy`:
 
 | Value | Behavior |
 |---|---|
-| `auto` *(default)* | Copy files that are outside the project to `.agent-shell/.macext/`. Skip copying if the agent has blanket permissions (e.g. `agent-shell-permission-allow-always`) or if the file is already inside the project. |
-| `always-copy` | Always copy every file to `.agent-shell/.macext/`. |
+| `auto` *(default)* | Copy files that are outside the project to the `.macext` data directory. Skip copying if the agent has blanket permissions (e.g. `agent-shell-permission-allow-always`) or if the file is already inside the project. |
+| `always-copy` | Always copy every file to the `.macext` data directory. |
 | `always-original` | Always use the original path as-is. |
 
 Regardless of the policy, files in system temporary directories (`/var/folders/`, `/tmp/`, `/private/tmp/`) are **always copied**. These paths — such as screenshots dragged from the iOS Simulator — can be deleted by macOS at any time, so keeping the original path would cause a "file does not exist" error.
