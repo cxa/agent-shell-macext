@@ -307,6 +307,8 @@ Intended for use as a hook on `agent-shell-mode-hook'."
   (unless (eq system-type 'darwin)
     (user-error "agent-shell-macext is intended for macOS only"))
   (define-key agent-shell-mode-map [remap yank] #'agent-shell-macext-yank)
+  (define-key agent-shell-viewport-edit-mode-map [remap yank]
+              #'agent-shell-macext-yank)
   (agent-shell-macext--setup-dnd)
   (agent-shell-macext--setup-notifications))
 
