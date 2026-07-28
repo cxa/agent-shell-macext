@@ -249,7 +249,8 @@ Can be set buffer-locally to control behaviour per agent-shell buffer."
   "Show a native macOS notification with TITLE and MESSAGE."
   (if (executable-find "terminal-notifier")
       (call-process "terminal-notifier" nil 0 nil
-                    "-title" title "-message" message "-sender" "org.gnu.Emacs")
+                    "-title" title "-message" message
+                    "-sender" "org.gnu.Emacs" "-activate" "org.gnu.Emacs")
     (call-process "osascript" nil 0 nil
                   "-e" (format "display notification %S with title %S"
                                message title))))
